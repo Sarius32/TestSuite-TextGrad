@@ -49,8 +49,8 @@ def archive_exec_eval(iteration):
 
 def archive_tests(iteration):
     # remove cache
-    shutil.rmtree(pjoin(CWD, "tests", ".pytest_cache")) if os.path.exists(
-        pjoin(CWD, "tests", ".pytest_cache")) else None
+    shutil.rmtree(pjoin(CWD, "tests", "__pycache__")) if os.path.exists(
+        pjoin(CWD, "tests", "__pycache__")) else None
     shutil.make_archive(pjoin(CWD, f"tests_{iteration:02}"), 'zip', pjoin(CWD, "tests"))
     LOGGER.debug(f"Created tests for iteration {iteration} archived to tests_{iteration:02}.zip")
 
@@ -79,7 +79,8 @@ async def main(skip_architect=False):
             open(pjoin(CWD, "stderr.log"), "w").write(exec_.stderr.decode())
 
         exec_lines = exec_.stdout.decode().strip().split("\n")
-        if any(["Interrupted" in e for e in exec_lines]):  # no execution (i.e. error during collection)
+        if (any(["Interrupted" in e for e in exec_lines])  # no execution due to error(s) during collection
+                or any(["INTERNALERROR" in e for e in exec_lines])):  # no execution due to INTERNALERROR (produces warnings, pytest not executable, no "Interrupted" printed)
             LOGGER.info("No tests were executed. Error(s) found during collection! Skipping evaluation!")
             gen_prompt = GEN_ERROR_PROMPT
             continue
