@@ -74,23 +74,24 @@ async def main(skip_architect=False):
 
         LOGGER.info(f"--- TEST SUITE EXECUTION{it} ---")
         exec_ = subprocess.run(["python", "-m", "pytest"], cwd=CWD, capture_output=True)
-        if exec_.stderr or b"= ERRORS =" in exec_.stdout:
-            LOGGER.info("Error(s) found during execution! Skipping evaluation!")
+
+        if exec_.stderr:  # always store any errors on the STD err output
+            open(pjoin(CWD, "stderr.log"), "w").write(exec_.stderr.decode())
+
+        exec_lines = exec_.stdout.decode().strip().split("\n")
+        if any(["Interrupted" in e for e in exec_lines]):  # no execution (i.e. error during collection)
+            LOGGER.info("No tests were executed. Error(s) found during collection! Skipping evaluation!")
             gen_prompt = GEN_ERROR_PROMPT
-
-            # save the error output of stderr (i.e. syntax error -> code can't be executed)
-            if exec_.stderr:
-                open(pjoin(CWD, "stderr.log"), "w").write(exec_.stderr.decode())
-
-            # skip evaluation and instruct generator to fix errors directly
             continue
 
-        LOGGER.info("Execution successful! Starting Evaluation!")
+        result = exec_lines[-1]
+        LOGGER.info(f"Execution successful with the following metrics: {result}")
+
         gen_prompt = GEN_REFINE_PROMPT
 
         LOGGER.info(f"--- TEST SUITE EVALUATION{it} ---")
         evaluator = Agent(EVAL_NAME + it, EVAL_SYS_PROMPT, CWD, MODEL)
-        final = "<FINAL>" in await evaluator.query(EVAL_PROMPT)
+        final = "<FINAL>" in await evaluator.query(EVAL_PROMPT(result))
 
         if final:
             break

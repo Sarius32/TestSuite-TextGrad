@@ -42,7 +42,7 @@ You MUST NEVER use any other tools! You MUST NEVER execute the test suite yourse
     - Note any specific testing patterns or conventions required
 
 4. **Feedback Analysis Phase** (Conditional - for refinement iterations)
-   a) **If you're instructed to refine the test suite (`evaluation.md` exists)**:
+   a) **If you're instructed to refine the test suite and fix failed tests (`evaluation.md` exists)**:
     - Read the evaluation report thoroughly
     - Identify ALL failing tests that need fixes
     - Note coverage gaps that are actually testable
